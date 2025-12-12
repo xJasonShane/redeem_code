@@ -6,12 +6,6 @@ import { validateKvClient } from '@/app/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    // 检查KV客户端是否初始化
-    const kvValidation = validateKvClient(kv)
-    if (!kvValidation.valid) {
-      return errorResponse(kvValidation.error, 500)
-    }
-
     // 获取客户端IP并检查频率限制
     const ip = getClientIp(request)
     const isAllowed = await checkRateLimit(ip)

@@ -1,7 +1,22 @@
-import { createClient } from '@vercel/kv'
+import { createClient, type Kv } from '@vercel/kv'
 
-// 只有在环境变量存在时才初始化KV客户端
-let kvClient: ReturnType<typeof createClient> | null = null
+// 创建一个空的KV客户端实现，用于开发环境或KV未配置时
+const createMockKv = (): Partial<Kv> => {
+  return {
+    get: async () => null,
+    hget: async () => null,
+    hset: async () => 0,
+    hgetall: async () => {},
+    sadd: async () => 0,
+    sismember: async () => 0,
+    scard: async () => 0,
+    hincrby: async () => 0,
+    set: async () => 'OK'
+  }
+}
+
+// 初始化KV客户端
+let kvClient: Partial<Kv> = createMockKv()
 
 if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
   kvClient = createClient({
@@ -10,8 +25,8 @@ if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
   })
 }
 
-// 导出KV客户端，在使用时检查是否初始化
-export const kv = kvClient!
+// 导出KV客户端
+export const kv = kvClient
 
 // 存储键名常量
 export const KEYS = {

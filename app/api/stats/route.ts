@@ -18,9 +18,8 @@ export async function GET(request: NextRequest) {
 
   try {
     // 检查KV客户端是否初始化
-    const kvValidation = validateKvClient(kv)
-    if (!kvValidation.valid) {
-      return errorResponse(kvValidation.error, 500)
+    if (!kv) {
+      return errorResponse('KV client not initialized', 500)
     }
 
     // 获取统计信息

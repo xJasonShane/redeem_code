@@ -12,11 +12,18 @@ export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 5 // 最多5次请求
 }
 
-// 获取客户端IP
-export function getClientIp(request: Request): string {
+// 获取客户端IP（兼容NextRequest和Request类型）
+export function getClientIp(request: any): string {
   const headers = request.headers
-  return headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-         headers.get('x-real-ip')?.trim() || 
+  const headersObj = headers instanceof Headers ? headers : {
+    get: (key: string) => headers[key] || headers[key.toLowerCase()]
+  }
+  
+  const xForwardedFor = headersObj.get('x-forwarded-for') || ''
+  const xRealIp = headersObj.get('x-real-ip') || ''
+  
+  return xForwardedFor.split(',')[0]?.trim() || 
+         xRealIp.trim() || 
          'unknown'
 }
 
