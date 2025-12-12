@@ -1,12 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { kv, KEYS } from '@/app/lib/kv'
+import { successResponse, errorResponse, serverErrorResponse } from '@/app/lib/response'
+import { validateAdminKey, validateKvClient } from '@/app/lib/auth'
 
-// 验证管理员API密钥
-function validateAdminKey(request: NextRequest) {
-  const apiKey = request.headers.get('x-admin-api-key')
-  if (apiKey !== process.env.ADMIN_API_KEY) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+// 统计信息类型
+interface StatsData {
+  total: number
+  used: number
+  remaining: number
+  usageRate: number
 }
 
 export async function GET(request: NextRequest) {
@@ -16,30 +18,29 @@ export async function GET(request: NextRequest) {
 
   try {
     // 检查KV客户端是否初始化
-    if (!kv) {
-      return NextResponse.json({ error: 'KV client not initialized' }, { status: 500 })
+    const kvValidation = validateKvClient(kv)
+    if (!kvValidation.valid) {
+      return errorResponse(kvValidation.error, 500)
     }
 
     // 获取统计信息
     const stats = await kv.hgetall(KEYS.STATS) as Record<string, string> || {}
-    const total = parseInt((stats && stats.total) || '0')
-    const used = parseInt((stats && stats.used) || '0')
-    const remaining = total - used
-
+    const total = parseInt(stats.total || '0')
+    
     // 获取已使用兑换码数量
     const usedCount = await kv.scard(KEYS.USED_CODES)
+    const remaining = Math.max(0, total - usedCount)
+    const usageRate = total > 0 ? Math.round((usedCount / total) * 100) : 0
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        total,
-        used: usedCount,
-        remaining: Math.max(0, total - usedCount),
-        usageRate: total > 0 ? Math.round((usedCount / total) * 100) : 0
-      }
-    })
+    const statsData: StatsData = {
+      total,
+      used: usedCount,
+      remaining,
+      usageRate
+    }
+
+    return successResponse(statsData, 'Stats retrieved successfully')
   } catch (error) {
-    console.error('Stats error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return serverErrorResponse(error)
   }
 }

@@ -1,35 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { kv, KEYS } from '@/app/lib/kv'
-
-// 限制同一IP的请求频率
-const RATE_LIMIT = {
-  WINDOW: 60 * 1000, // 1分钟
-  MAX_REQUESTS: 5    // 最多5次请求
-}
-
-// 获取客户端IP
-function getClientIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown'
-}
-
-// 检查并更新请求频率
-async function checkRateLimit(ip: string): Promise<boolean> {
-  const key = `rate:limit:${ip}`
-  const current = await kv.get<number>(key) || 0
-  
-  if (current >= RATE_LIMIT.MAX_REQUESTS) {
-    return false
-  }
-  
-  await kv.set(key, current + 1, { ex: RATE_LIMIT.WINDOW / 1000 })
-  return true
-}
+import { successResponse, errorResponse, rateLimitResponse, notFoundResponse, serverErrorResponse } from '@/app/lib/response'
+import { getClientIp, checkRateLimit } from '@/app/lib/rateLimit'
+import { validateKvClient } from '@/app/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
     // 检查KV客户端是否初始化
-    if (!kv) {
-      return NextResponse.json({ error: 'KV client not initialized' }, { status: 500 })
+    const kvValidation = validateKvClient(kv)
+    if (!kvValidation.valid) {
+      return errorResponse(kvValidation.error, 500)
     }
 
     // 获取客户端IP并检查频率限制
@@ -37,13 +17,15 @@ export async function POST(request: NextRequest) {
     const isAllowed = await checkRateLimit(ip)
     
     if (!isAllowed) {
-      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+      return rateLimitResponse()
     }
 
-    const { plaintext } = await request.json()
+    const body = await request.json()
+    const { plaintext } = body
 
+    // 验证请求参数
     if (!plaintext || typeof plaintext !== 'string') {
-      return NextResponse.json({ error: 'Invalid plaintext' }, { status: 400 })
+      return errorResponse('Invalid plaintext')
     }
 
     const trimmedPlaintext = plaintext.trim()
@@ -52,14 +34,14 @@ export async function POST(request: NextRequest) {
     const code = await kv.hget<string>(KEYS.REDEEM_MAP, trimmedPlaintext)
     
     if (!code) {
-      return NextResponse.json({ error: 'Plaintext not found' }, { status: 404 })
+      return notFoundResponse('Plaintext not found')
     }
 
     // 检查兑换码是否已被使用
     const isUsed = await kv.sismember(KEYS.USED_CODES, code)
     
     if (isUsed) {
-      return NextResponse.json({ error: 'Code already used' }, { status: 400 })
+      return errorResponse('Code already used')
     }
 
     // 原子操作：标记兑换码为已使用
@@ -68,9 +50,8 @@ export async function POST(request: NextRequest) {
     // 更新统计信息
     await kv.hincrby(KEYS.STATS, 'used', 1)
 
-    return NextResponse.json({ success: true, code })
+    return successResponse({ code }, 'Code redeemed successfully')
   } catch (error) {
-    console.error('Redeem error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return serverErrorResponse(error)
   }
 }
