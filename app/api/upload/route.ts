@@ -40,11 +40,6 @@ export async function POST(request: NextRequest) {
   if (authResponse) return authResponse
 
   try {
-    // 检查KV客户端是否初始化
-    if (!kv) {
-      return errorResponse('KV client not initialized', 500)
-    }
-
     const formData = await request.formData()
     const file = formData.get('file') as File
 

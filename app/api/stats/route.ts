@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { kv, KEYS } from '@/app/lib/kv'
-import { successResponse, errorResponse, serverErrorResponse } from '@/app/lib/response'
+import { successResponse, serverErrorResponse } from '@/app/lib/response'
 import { validateAdminKey } from '@/app/lib/auth'
 
 // 统计信息类型
@@ -17,11 +17,6 @@ export async function GET(request: NextRequest) {
   if (authResponse) return authResponse
 
   try {
-    // 检查KV客户端是否初始化
-    if (!kv) {
-      return errorResponse('KV client not initialized', 500)
-    }
-
     // 获取统计信息
     const stats = await kv.hgetall(KEYS.STATS) as Record<string, string> || {}
     const total = parseInt(stats.total || '0')

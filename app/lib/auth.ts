@@ -8,14 +8,3 @@ export function validateAdminKey(request: NextRequest) {
     return unauthorizedResponse()
   }
 }
-
-// 验证KV客户端是否初始化
-export function validateKvClient(client: unknown) {
-  if (!client) {
-    return {
-      valid: false,
-      error: 'KV client not initialized'
-    }
-  }
-  return { valid: true, error: '' as const }
-}
