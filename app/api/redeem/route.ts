@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { kv, KEYS } from '@/app/lib/kv'
 import { successResponse, errorResponse, rateLimitResponse, notFoundResponse, serverErrorResponse } from '@/app/lib/response'
 import { getClientIp, checkRateLimit } from '@/app/lib/rateLimit'
-import { validateKvClient } from '@/app/lib/auth'
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const trimmedPlaintext = plaintext.trim()
     
     // 从KV获取兑换码
-    const code = await kv.hget<string>(KEYS.REDEEM_MAP, trimmedPlaintext)
+    const code = await kv.hget(KEYS.REDEEM_MAP, trimmedPlaintext) as string | null
     
     if (!code) {
       return notFoundResponse('Plaintext not found')

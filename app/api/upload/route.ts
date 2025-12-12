@@ -3,7 +3,7 @@ import { kv, KEYS } from '@/app/lib/kv'
 import csvParser from 'csv-parser'
 import { Readable } from 'stream'
 import { successResponse, errorResponse, serverErrorResponse } from '@/app/lib/response'
-import { validateAdminKey, validateKvClient } from '@/app/lib/auth'
+import { validateAdminKey } from '@/app/lib/auth'
 
 // CSV处理结果类型
 interface CsvRow {

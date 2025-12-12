@@ -10,11 +10,11 @@ export function validateAdminKey(request: NextRequest) {
 }
 
 // 验证KV客户端是否初始化
-export function validateKvClient(client: any) {
+export function validateKvClient(client: unknown) {
   if (!client) {
     return {
       valid: false,
-      error: 'KV client not initialized' as const
+      error: 'KV client not initialized'
     }
   }
   return { valid: true, error: '' as const }

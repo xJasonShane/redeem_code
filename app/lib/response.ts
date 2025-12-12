@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 // API响应类型
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
 }
 
 // 成功响应
-export function successResponse<T = any>(data?: T, message?: string, status: number = 200): NextResponse {
+export function successResponse<T = unknown>(data?: T, message?: string, status: number = 200): NextResponse {
   const response: ApiResponse<T> = {
     success: true,
     data,
@@ -43,7 +43,7 @@ export function notFoundResponse(error: string = 'Resource not found'): NextResp
 }
 
 // 服务器错误响应
-export function serverErrorResponse(error: any): NextResponse {
+export function serverErrorResponse(error: unknown): NextResponse {
   console.error('Server error:', error)
   return errorResponse('Internal server error', 500)
 }

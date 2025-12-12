@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { kv, KEYS } from '@/app/lib/kv'
 import { successResponse, errorResponse, serverErrorResponse } from '@/app/lib/response'
-import { validateAdminKey, validateKvClient } from '@/app/lib/auth'
+import { validateAdminKey } from '@/app/lib/auth'
 
 // 统计信息类型
 interface StatsData {
