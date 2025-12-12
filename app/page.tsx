@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 // API响应类型
 interface ApiResponse<T = unknown> {
@@ -21,6 +21,13 @@ export default function RedeemPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isCopied, setIsCopied] = useState(false)
+  const [isPageLoaded, setIsPageLoaded] = useState(false)
+
+  // 页面加载动画
+  useEffect(() => {
+    setIsPageLoaded(true)
+  }, [])
 
   // 重置表单
   const resetForm = () => {
@@ -28,6 +35,7 @@ export default function RedeemPage() {
     setCode(null)
     setError(null)
     setSuccessMessage(null)
+    setIsCopied(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -160,27 +168,57 @@ export default function RedeemPage() {
                 </div>
               )}
               
-              <div className="p-4 bg-white dark:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-600 animate-fade-in">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className={`p-6 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 transition-all duration-500 transform hover:shadow-xl animate-fade-in ${isPageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                  <svg className="h-5 w-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
                   您的兑换码
                 </h3>
-                <div className="flex items-center justify-between">
-                  <code className="text-lg font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-4 py-2 rounded-md break-all">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3">
+                  <code className="text-lg sm:text-xl font-mono font-bold text-gray-900 dark:text-white bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-6 py-3 rounded-lg break-all shadow-inner">
                     {code}
                   </code>
                   <button
-                    onClick={() => navigator.clipboard.writeText(code)}
-                    className="ml-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition-colors duration-200"
-                    title="复制到剪贴板"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(code)
+                      setIsCopied(true)
+                      setTimeout(() => setIsCopied(false), 2000)
+                    }}
+                    className={`relative px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 font-medium ${
+                      isCopied ? 
+                      'bg-green-600 text-white hover:bg-green-700' : 
+                      'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    title={isCopied ? '已复制' : '复制到剪贴板'}
                   >
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                    </svg>
+                    <span className="flex items-center">
+                      {isCopied ? (
+                        <>
+                          <svg className="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          已复制
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                          </svg>
+                          复制
+                        </>
+                      )}
+                    </span>
                   </button>
                 </div>
-                <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  请妥善保管您的兑换码，每个明文只能兑换一次
-                </p>
+                <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <svg className="h-4 w-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    请妥善保管您的兑换码，每个明文只能兑换一次
+                  </p>
+                </div>
               </div>
               
               <div className="flex justify-center">
